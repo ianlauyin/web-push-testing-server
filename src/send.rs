@@ -65,7 +65,7 @@ async fn send(
         Ok(()) => Ok(StatusCode::NO_CONTENT),
         Err(e) => Err(ApiError {
             status: StatusCode::BAD_REQUEST,
-            message: e.short_description().to_string(),
+            message: e.to_string(),
         }),
     }
 }
