@@ -68,14 +68,22 @@ async fn remove(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
+    let state_clone = state.clone();
+    if remove_by_id(state_clone, id).await {
+        return Ok(StatusCode::NO_CONTENT);
+    }
+    Err(ApiError {
+        status: StatusCode::NOT_FOUND,
+        message: "subscription not found".into(),
+    })
+}
+
+pub async fn remove_by_id(state: AppState, id: String) -> bool {
     let mut subs = state.subscriptions.write().await;
     if subs.remove(&id).is_some() {
         tracing::info!("removed subscription with id: {}", id);
-        Ok(StatusCode::NO_CONTENT)
+        true
     } else {
-        Err(ApiError {
-            status: StatusCode::NOT_FOUND,
-            message: "subscription not found".into(),
-        })
+        false
     }
 }

@@ -61,6 +61,11 @@ async fn send(
     msg.set_payload(ContentEncoding::Aes128Gcm, &payload);
     msg.set_vapid_signature(sig.build()?);
 
-    state.client.send(msg.build()?).await?;
-    Ok(StatusCode::NO_CONTENT)
+    match state.client.send(msg.build()?).await {
+        Ok(()) => Ok(StatusCode::NO_CONTENT),
+        Err(e) => Err(ApiError {
+            status: StatusCode::BAD_REQUEST,
+            message: e.short_description().to_string(),
+        }),
+    }
 }
