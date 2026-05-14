@@ -12,6 +12,7 @@ pub struct ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
+        tracing::error!(status = %self.status, message = %self.message, "api error");
         let body = Json(serde_json::json!({ "error": self.message }));
         (self.status, body).into_response()
     }
