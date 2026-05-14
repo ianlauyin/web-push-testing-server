@@ -9,7 +9,8 @@ use anyhow::Context;
 use axum::Router;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
-use tower_http::trace::TraceLayer;
+use axum::http::{header, HeaderValue, Method};
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use web_push::IsahcWebPushClient;
 
@@ -51,9 +52,17 @@ async fn main() -> anyhow::Result<()> {
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
 
-    let app = Router::new()
+    let mut app = Router::new()
         .merge(send::router())
-        .merge(subscription::router())
+        .merge(subscription::router());
+
+    if let Some(cors) = cors_layer() {
+        app = app.layer(cors);
+    } else {
+        tracing::info!("CORS: disabled (set CORS_ALLOW_ORIGIN to enable)");
+    }
+
+    let app = app
         .layer(TraceLayer::new_for_http())
         .with_state(AppState {
             client: Arc::new(IsahcWebPushClient::new()?),
@@ -66,4 +75,37 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("listening on http://{addr}");
     axum::serve(listener, app).await?;
     Ok(())
+}
+
+/// Builds the CORS layer from the `CORS_ALLOW_ORIGIN` env var.
+///
+/// * Unset or empty → `None` (no CORS layer attached, browsers will block cross-origin).
+/// * `*` → permissive (any origin).
+/// * Comma-separated list of origins → only those origins.
+fn cors_layer() -> Option<CorsLayer> {
+    let raw = std::env::var("CORS_ALLOW_ORIGIN").ok()?;
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    if raw == "*" {
+        tracing::info!("CORS: permissive (any origin)");
+        return Some(CorsLayer::permissive());
+    }
+    let origins: Vec<HeaderValue> = raw
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| s.parse::<HeaderValue>().ok())
+        .collect();
+    if origins.is_empty() {
+        return None;
+    }
+    tracing::info!("CORS: allowed origins = {:?}", origins);
+    Some(
+        CorsLayer::new()
+            .allow_origin(origins)
+            .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
+            .allow_headers([header::CONTENT_TYPE]),
+    )
 }
