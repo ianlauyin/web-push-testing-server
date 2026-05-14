@@ -21,8 +21,14 @@ pub struct SubscriptionInfo {
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/subscriptions", post(create))
+        .route("/subscriptions", post(create).get(list))
         .route("/subscriptions/:id", delete(remove))
+}
+
+// ===== List subscriptions endpoint =====
+async fn list(State(state): State<AppState>) -> Json<Vec<SubscriptionInfo>> {
+    let subs = state.subscriptions.read().await;
+    Json(subs.values().cloned().collect())
 }
 
 // ===== Create subscription endpoint =====
