@@ -15,3 +15,5 @@ vapid_private_key.b64
 .idea/
 .vscode/
 *.swp
+
+CLI_LIST.md
