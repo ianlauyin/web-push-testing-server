@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    routing::{delete, get},
+    routing::{delete, post},
     Json, Router,
 };
 use serde::Serialize;
@@ -21,14 +21,8 @@ pub struct SubscriptionInfo {
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/subscriptions", get(list).post(create))
+        .route("/subscriptions", post(create))
         .route("/subscriptions/:id", delete(remove))
-}
-
-// ===== List all subscriptions endpoint =====
-async fn list(State(state): State<AppState>) -> Json<SubscriptionMap> {
-    let subs = state.subscriptions.read().await;
-    Json(subs.clone())
 }
 
 // ===== Create subscription endpoint =====
