@@ -1,0 +1,10 @@
+{
+  "id": "",
+  "payload": {
+    "title": "Test Push Notification",
+    "body": "Sent via web-push-testing-server",
+    "redirection": {
+      "type": "ANNOUNCEMENT"
+    }
+  }
+}

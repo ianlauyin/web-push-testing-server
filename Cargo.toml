@@ -1,0 +1,20 @@
+[package]
+name = "web-push-testing-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+web-push = { version = "0.10", default-features = false, features = ["isahc-client"] }
+
+uuid = { version = "1", features = ["v4", "serde"] }
+anyhow = "1"
+dotenvy = "0.15"

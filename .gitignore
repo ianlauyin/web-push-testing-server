@@ -1,0 +1,17 @@
+# Rust build artifacts
+/target
+
+# Local environment (contains VAPID private key)
+.env
+*.env.local
+
+# Legacy VAPID key file (now read from VAPID_PRIVATE_KEY env var)
+vapid_private_key.b64
+
+# macOS
+.DS_Store
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
