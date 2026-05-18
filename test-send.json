@@ -1,10 +1,9 @@
 {
   "id": "",
+  "pushType": "DECLARATIVE",
   "payload": {
     "title": "Test Push Notification",
     "body": "Sent via web-push-testing-server",
-    "redirection": {
-      "type": "ANNOUNCEMENT"
-    }
+    "navigate": "https://www.ubgame.dev"
   }
 }
