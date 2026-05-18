@@ -4,6 +4,6 @@
   "payload": {
     "title": "Test Push Notification",
     "body": "Sent via web-push-testing-server",
-    "navigate": "https://www.ubgame.dev"
+    "navigate": ""
   }
 }
