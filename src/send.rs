@@ -1,18 +1,27 @@
 use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
 use web_push::{
-    ContentEncoding, VapidSignatureBuilder, WebPushClient, WebPushMessageBuilder, URL_SAFE_NO_PAD,
+    ContentEncoding, SubscriptionInfo, VapidSignatureBuilder, WebPushClient, WebPushMessageBuilder,
+    URL_SAFE_NO_PAD,
 };
 
 use crate::{error::ApiError, AppState};
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/send", post(send))
+    Router::new()
+        .route("/send", post(send))
+        .route("/send-direct", post(send_direct))
 }
 
 #[derive(Deserialize)]
 struct SendRequest {
     id: String,
+    payload: Payload,
+}
+
+#[derive(Deserialize)]
+struct SendDirectRequest {
+    subscription: SubscriptionInfo,
     payload: Payload,
 }
 
@@ -49,19 +58,51 @@ async fn send(
         status: StatusCode::NOT_FOUND,
         message: "subscription not found".into(),
     })?;
+    send_push(&state, &subscription.info, &req.payload).await
+}
+
+async fn send_direct(
+    State(state): State<AppState>,
+    Json(req): Json<SendDirectRequest>,
+) -> Result<StatusCode, ApiError> {
+    send_push(&state, &req.subscription, &req.payload).await
+}
+
+async fn send_push(
+    state: &AppState,
+    subscription: &SubscriptionInfo,
+    payload: &Payload,
+) -> Result<StatusCode, ApiError> {
+    if subscription.endpoint.is_empty()
+        || subscription.keys.p256dh.is_empty()
+        || subscription.keys.auth.is_empty()
+    {
+        return Err(ApiError {
+            status: StatusCode::BAD_REQUEST,
+            message: "missing endpoint or keys".into(),
+        });
+    }
 
     let mut sig = VapidSignatureBuilder::from_base64(
         &state.vapid.private_key,
         URL_SAFE_NO_PAD,
-        &subscription.info,
+        subscription,
     )?;
     sig.add_claim("sub", state.vapid.subject.as_str());
 
-    let mut msg = WebPushMessageBuilder::new(&subscription.info);
-    let payload = serde_json::to_vec(&req.payload)?;
+    let mut msg = WebPushMessageBuilder::new(subscription);
+    let payload = serde_json::to_vec(payload)?;
     msg.set_payload(ContentEncoding::Aes128Gcm, &payload);
     msg.set_vapid_signature(sig.build()?);
 
-    state.client.send(msg.build()?).await?;
-    Ok(StatusCode::NO_CONTENT)
+    match state.client.send(msg.build()?).await {
+        Ok(_) => Ok(StatusCode::NO_CONTENT),
+        Err(e) => {
+            tracing::error!("error sending push notification: {:?}", e);
+            Err(ApiError {
+                status: StatusCode::BAD_GATEWAY,
+                message: e.to_string(),
+            })
+        }
+    }
 }
