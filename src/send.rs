@@ -96,11 +96,14 @@ async fn send_push(
     msg.set_vapid_signature(sig.build()?);
 
     match state.client.send(msg.build()?).await {
-        Ok(_) => Ok(StatusCode::NO_CONTENT),
+        Ok(_) => {
+            tracing::info!("push notification sent successfully");
+            Ok(StatusCode::NO_CONTENT)
+        }
         Err(e) => {
             tracing::error!("error sending push notification: {:?}", e);
             Err(ApiError {
-                status: StatusCode::BAD_GATEWAY,
+                status: StatusCode::BAD_REQUEST,
                 message: e.to_string(),
             })
         }
