@@ -13,7 +13,7 @@ use crate::{error::ApiError, AppState};
 
 pub type SubscriptionMap = HashMap<String, SubscriptionInfo>;
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub struct SubscriptionInfo {
     pub id: String,
     pub info: web_push::SubscriptionInfo,
@@ -60,6 +60,7 @@ async fn create(
     };
     subs.insert(id.clone(), info.clone());
     tracing::info!("created subscription with id: {}", id);
+    tracing::info!("subscription: {:?}", info.clone());
     Ok(Json(CreateResponse { id }))
 }
 
