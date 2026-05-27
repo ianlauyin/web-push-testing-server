@@ -11,6 +11,7 @@
     "body": "Sent via web-push-testing-server",
     "redirection": {
       "type": "ANNOUNCEMENT"
-    }
+    },
+    "pushTag": []
   }
 }
