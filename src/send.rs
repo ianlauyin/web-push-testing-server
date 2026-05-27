@@ -30,6 +30,7 @@ struct Payload {
     pub title: String,
     pub body: String,
     pub redirection: Option<Redirection>,
+    pub tag: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
