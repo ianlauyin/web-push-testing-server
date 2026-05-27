@@ -25,7 +25,7 @@ struct SendDirectRequest {
     payload: Payload,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Payload {
     pub title: String,
     pub body: String,
@@ -33,14 +33,14 @@ struct Payload {
     pub tag: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Redirection {
     pub r#type: PushNotificationRedirectTypeView,
     pub id: Option<String>,
 }
 
 #[allow(clippy::upper_case_acronyms, non_camel_case_types)]
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize,Debug)]
 enum PushNotificationRedirectTypeView {
     ANNOUNCEMENT,
     CAMPAIGN,
@@ -92,6 +92,7 @@ async fn send_push(
     sig.add_claim("sub", state.vapid.subject.as_str());
 
     let mut msg = WebPushMessageBuilder::new(subscription);
+    tracing::info!("{:?}", payload);
     let payload = serde_json::to_vec(payload)?;
     msg.set_payload(ContentEncoding::Aes128Gcm, &payload);
     msg.set_vapid_signature(sig.build()?);
